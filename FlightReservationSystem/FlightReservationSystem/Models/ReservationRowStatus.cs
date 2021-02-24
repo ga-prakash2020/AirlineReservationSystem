@@ -1,4 +1,4 @@
-﻿namespace FlightReservationSystem
+﻿namespace FlightReservationSystem.Models
 {
     public class ReservationRowStatus
     {

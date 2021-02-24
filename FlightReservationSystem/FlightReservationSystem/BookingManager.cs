@@ -1,6 +1,6 @@
-﻿using System;
+﻿using FlightReservationSystem.Models;
+using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace FlightReservationSystem
 {
