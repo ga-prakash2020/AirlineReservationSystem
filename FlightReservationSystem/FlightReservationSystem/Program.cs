@@ -1,228 +1,43 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 
 namespace FlightReservationSystem
 {
     public class Program
     {
-        // due to time constraints :)
-
-        public Dictionary<int, ReservationRowStatus> overallBookingStatus = new Dictionary<int, ReservationRowStatus>();
-        public Dictionary<string, int> availabilityXList = new Dictionary<string, int>(); //adg seats
-        public Dictionary<string, int> availabilityYList = new Dictionary<string, int>(); //middle seats
-        public Dictionary<int, int> availabilityZList = new Dictionary<int, int>(); //available single seats
-
-        const int totalRows = 3;
-        const int adgSeatsCount = 3;
-        const int middleSeatsCount = 4;
-
         static void Main(string[] args)
         {
-            var instance = new Program();
-            instance.InitializeList(totalRows, adgSeatsCount, middleSeatsCount);
-            instance.ListOverallBookingStatus();
-            instance.ShowAvailabilityStatusX();
+            IConfiguration Configuration = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
+                    .AddCommandLine(args)
+                    .Build();
+
+            var section = Configuration.GetSection("appSettings");
+            var rows = int.Parse(section["numberOfRows"]);
+            var adgSeats = int.Parse(section["adjacentSeatsCount"]);
+            var middleSeats = int.Parse(section["middlesSeatsCount"]);
+
+            var bookingManager = new BookingManager();
+            bookingManager.InitializeList(rows, adgSeats, middleSeats);
+            bookingManager.ListOverallBookingStatus();
+            bookingManager.ShowAvailabilityStatusX();
 
             while (true)
             {
-
                 Console.WriteLine("Enter the no of seats to book:");
                 int seatsToBook = int.Parse(Console.ReadLine());
 
                 if (seatsToBook == 0)
                     break;
 
-                //var seatsToBook = 3;
-
                 Console.WriteLine($"Booking {seatsToBook} seats");
 
-                // book all from n seats bucket
-                instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
+                bookingManager.BookSeat(seatsToBook);
 
-                ////// book from n+1 seats bucket
-                //instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
-                //instance.BookSeat(seatsToBook);
-
-                ////// book from remaining single seats in n+1 seats bucket
-                //instance.BookSeat(seatsToBook);
-
-                instance.ListOverallBookingStatus();
-                instance.ShowAvailabilityStatusX();
-            }
-
-            Console.ReadLine();
-        }
-
-        public void InitializeList(int rows, int adgSeatsCount, int middleSeatsCount)
-        {
-            for (int i = 1; i <= rows; i++)
-            {
-                var rowStatus = new ReservationRowStatus(i, adgSeatsCount, middleSeatsCount);
-                rowStatus.Initialize();
-                this.overallBookingStatus.Add(i, rowStatus);
-
-                availabilityXList.Add($"{i},1", adgSeatsCount); //adg1
-                availabilityYList.Add($"{i},2", middleSeatsCount); //middle
-                availabilityXList.Add($"{i},3", adgSeatsCount); //adg2
-            }
-        }
-
-        void ListOverallBookingStatus()
-        {
-            Console.WriteLine("Overall Booking Status: 0 -> Available; 1 -> Booked");
-
-            foreach (var item in this.overallBookingStatus)
-            {
-                Console.WriteLine($"Row: {item.Key}");
-
-                var reservationRowStatus = item.Value;
-
-                foreach (var adg in reservationRowStatus.Adgecent1)
-                {
-                    Console.WriteLine($"Adgecent1 - Cell: {adg}");
-                }
-
-                foreach (var adg in reservationRowStatus.Middle)
-                {
-                    Console.WriteLine($"Middle - Cell: {adg}");
-                }
-
-                foreach (var adg in reservationRowStatus.Adgecent2)
-                {
-                    Console.WriteLine($"Adgecent2 - Cell: {adg}");
-                }
-            }
-        }
-
-        public void ShowAvailabilityStatusX()
-        {
-            Console.WriteLine("");
-            Console.WriteLine("*************Available seats************* ");
-
-            Console.WriteLine("Adj seats: ");
-            foreach (var item in availabilityXList)
-            {
-                Console.WriteLine($"{item.Key} : {item.Value}");
-            }
-
-            Console.WriteLine("Middle seats: ");
-            foreach (var item in availabilityYList)
-            {
-                Console.WriteLine($"{item.Key} : {item.Value}");
-            }
-
-            Console.WriteLine("Single seats: ");
-            foreach (var item in availabilityZList)
-            {
-                Console.WriteLine($"{item.Key} : {item.Value}");
-            }
-        }
-
-        public void BookSeat(int seatCount)
-        {
-            if (seatCount == adgSeatsCount)
-            {
-                string keyToRemoveX = string.Empty;
-
-                foreach (var item in availabilityXList)
-                {
-                    if (item.Value == seatCount)
-                    {
-                        var key = item.Key.Split(',');
-                        int row = int.Parse(key[0]);
-                        int cell = int.Parse(key[1]);
-
-                        // mark as booked
-                        var rowItem = overallBookingStatus[row];
-                        if (cell == 3)
-                        {
-                            for(int i = 0; i < seatCount; i++)
-                                rowItem.Adgecent2[i] = 1;
-                            //rowItem.Adgecent2[1] = 1;
-                        }
-                        else
-                        {
-                            for (int i = 0; i < seatCount; i++)
-                                rowItem.Adgecent1[i] = 1;
-                            //rowItem.Adgecent1[0] = 1;
-                            //rowItem.Adgecent1[1] = 1;
-                        }
-
-                        keyToRemoveX = item.Key;
-                        break;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(keyToRemoveX))
-                    availabilityXList.Remove(keyToRemoveX);
-                else
-                {
-                    string keyToRemoveY = string.Empty;
-                    int remaining = middleSeatsCount;
-
-                    foreach (var item in availabilityYList)
-                    {
-                        if (item.Value >= seatCount)
-                        {
-                            var key = item.Key.Split(',');
-                            int row = int.Parse(key[0]);
-
-                            // mark as booked
-                            var rowItem = overallBookingStatus[row];
-                            for (int i = 0; i < seatCount; i++)
-                                rowItem.Middle[i] = 1;
-
-                            //rowItem.Middle[0] = 1;
-                            //rowItem.Middle[1] = 1;
-
-                            remaining -= seatCount;
-
-                            keyToRemoveY = item.Key;
-                            break;
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(keyToRemoveY))
-                    {
-                        availabilityYList.Remove(keyToRemoveY);
-
-                        var key = keyToRemoveY.Split(',');
-                        int row = int.Parse(key[0]);
-
-                        availabilityZList.Add(row, 1);
-                    }
-                    else
-                    {
-                        List<int> keysToRemoveZ = new List<int>();
-                        int allocatedSeats = 0;
-
-                        foreach (var item in availabilityZList)
-                        {
-                            allocatedSeats++;
-                            int row = item.Key;
-                            keysToRemoveZ.Add(row);
-                            var rowItem = overallBookingStatus[row];
-                            rowItem.Middle[middleSeatsCount-1] = 1;
-
-                            if (allocatedSeats == seatCount)
-                            {
-                                break;
-                            }
-                        }
-
-                        foreach (var keyToRemoveZ in keysToRemoveZ)
-                        {
-                            availabilityZList.Remove(keyToRemoveZ);
-                        }
-                    }
-
-                }
+                bookingManager.ListOverallBookingStatus();
+                bookingManager.ShowAvailabilityStatusX();
             }
         }
     }
