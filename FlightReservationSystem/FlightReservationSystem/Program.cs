@@ -13,8 +13,8 @@ namespace FlightReservationSystem
         public Dictionary<int, int> availabilityZList = new Dictionary<int, int>(); //available single seats
 
         const int totalRows = 3;
-        const int adgSeatsCount = 2;
-        const int middleSeatsCount = 3;
+        const int adgSeatsCount = 3;
+        const int middleSeatsCount = 4;
 
         static void Main(string[] args)
         {
@@ -23,26 +23,38 @@ namespace FlightReservationSystem
             instance.ListOverallBookingStatus();
             instance.ShowAvailabilityStatusX();
 
-            Console.WriteLine("Booking 2 seats");
+            while (true)
+            {
 
-            // book all from 2 seats bucket
-            instance.BookSeat(2);
-            instance.BookSeat(2);
-            instance.BookSeat(2);
-            instance.BookSeat(2);
-            instance.BookSeat(2);
-            instance.BookSeat(2);
+                Console.WriteLine("Enter the no of seats to book:");
+                int seatsToBook = int.Parse(Console.ReadLine());
 
-            // book from 3 seats bucket
-            instance.BookSeat(2);
-            instance.BookSeat(2);
-            instance.BookSeat(2);
+                if (seatsToBook == 0)
+                    break;
 
-            // book from remaining single seats in 3 seats bucket
-            instance.BookSeat(2);
+                //var seatsToBook = 3;
 
-            instance.ListOverallBookingStatus();
-            instance.ShowAvailabilityStatusX();
+                Console.WriteLine($"Booking {seatsToBook} seats");
+
+                // book all from n seats bucket
+                instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+
+                ////// book from n+1 seats bucket
+                //instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+                //instance.BookSeat(seatsToBook);
+
+                ////// book from remaining single seats in n+1 seats bucket
+                //instance.BookSeat(seatsToBook);
+
+                instance.ListOverallBookingStatus();
+                instance.ShowAvailabilityStatusX();
+            }
 
             Console.ReadLine();
         }
@@ -55,9 +67,9 @@ namespace FlightReservationSystem
                 rowStatus.Initialize();
                 this.overallBookingStatus.Add(i, rowStatus);
 
-                availabilityXList.Add($"{i},1", 2); //adg1
-                availabilityYList.Add($"{i},2", 3); //middle
-                availabilityXList.Add($"{i},3", 2); //adg2
+                availabilityXList.Add($"{i},1", adgSeatsCount); //adg1
+                availabilityYList.Add($"{i},2", middleSeatsCount); //middle
+                availabilityXList.Add($"{i},3", adgSeatsCount); //adg2
             }
         }
 
@@ -130,13 +142,16 @@ namespace FlightReservationSystem
                         var rowItem = overallBookingStatus[row];
                         if (cell == 3)
                         {
-                            rowItem.Adgecent2[0] = 1;
-                            rowItem.Adgecent2[1] = 1;
+                            for(int i = 0; i < seatCount; i++)
+                                rowItem.Adgecent2[i] = 1;
+                            //rowItem.Adgecent2[1] = 1;
                         }
                         else
                         {
-                            rowItem.Adgecent1[0] = 1;
-                            rowItem.Adgecent1[1] = 1;
+                            for (int i = 0; i < seatCount; i++)
+                                rowItem.Adgecent1[i] = 1;
+                            //rowItem.Adgecent1[0] = 1;
+                            //rowItem.Adgecent1[1] = 1;
                         }
 
                         keyToRemoveX = item.Key;
@@ -160,10 +175,13 @@ namespace FlightReservationSystem
 
                             // mark as booked
                             var rowItem = overallBookingStatus[row];
-                            rowItem.Middle[0] = 1;
-                            rowItem.Middle[1] = 1;
+                            for (int i = 0; i < seatCount; i++)
+                                rowItem.Middle[i] = 1;
 
-                            remaining -= 2;
+                            //rowItem.Middle[0] = 1;
+                            //rowItem.Middle[1] = 1;
+
+                            remaining -= seatCount;
 
                             keyToRemoveY = item.Key;
                             break;
@@ -190,7 +208,7 @@ namespace FlightReservationSystem
                             int row = item.Key;
                             keysToRemoveZ.Add(row);
                             var rowItem = overallBookingStatus[row];
-                            rowItem.Middle[2] = 1;
+                            rowItem.Middle[middleSeatsCount-1] = 1;
 
                             if (allocatedSeats == seatCount)
                             {
